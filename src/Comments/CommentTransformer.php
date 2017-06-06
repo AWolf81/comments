@@ -10,6 +10,10 @@ class CommentTransformer extends TransformerAbstract
         'user',
     ];
 
+    function __construct($UserTransformer = UserTransformer::class) {
+        $this->UserTransformer = $UserTransformer;
+    }
+
     public function transform(Comment $comment)
     {
         return [
@@ -25,7 +29,8 @@ class CommentTransformer extends TransformerAbstract
     {
         $user = $comment->user()->first();
 
-        return $this->item($user, new UserTransformer);
+        // return $this->item($user, new UserTransformer);
+        return $this->item($user, new $this->UserTransformer);
     }
 
 }

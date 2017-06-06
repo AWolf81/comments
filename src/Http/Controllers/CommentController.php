@@ -4,6 +4,8 @@ use Illuminate\Http\Request;
 use Validator;
 use Laravelista\Comments\Comments\Comment;
 use League\Fractal\Manager;
+use League\Fractal\Serializer\ArraySerializer;
+use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use Laravelista\Syndra\Syndra;
 use Laravelista\Comments\Comments\CommentTransformer;
 use Laravelista\Comments\Comments\UserTransformer;
@@ -23,6 +25,10 @@ class CommentController extends BaseController
     {
         $this->fractal = $fractal;
         $this->syndra = $syndra;
+
+        if (config('comments.remove_data_property')){
+            $this->fractal->setSerializer(new ArraySerializer());
+        }
 
         /**
          * Comments Index can be viewed as guest.
@@ -85,8 +91,11 @@ class CommentController extends BaseController
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
+    public function index(Request $request, $transformers = null)
     {
+        $transformers['comment'] = $transformers['comment'] ?? CommentTransformer::class;
+        $transformers['user'] = $transformers['user'] ?? UserTransformer::class;
+
         $validator = $this->baseValidate($request->all());
 
         if($validator->fails()) {
@@ -100,13 +109,33 @@ class CommentController extends BaseController
             $request->get('content_id')
         );
 
-        $resource = new Collection($model->comments, new CommentTransformer);
+        // $paginator = $model->comments()->paginate(5);
+        // $resource = new Collection($paginator,
+        //     new $transformers['comment']($transformers['user']));
+
+        $resource = new Collection($model->comments,
+            new $transformers['comment']($transformers['user']));
+
+        // pagination (if page passed)
+        // $page = $request->input('page');
+        // if ($page !== null) {
+        //     // $queryParams = array_diff_key($_GET, array_flip(['page']));
+        //     // $modelClass = $request->get('content_type');
+        //     // $paginator->appends(['page' => $page]);
+        //     $queryParams = array_diff_key($_GET, array_flip(['page']));
+        //     $paginator->appends($queryParams);
+        //
+        //     $paginatorAdapter = new IlluminatePaginatorAdapter($paginator);
+        //     $resource->setPaginator($paginatorAdapter);
+        // }
+
+
         /**
          * If user is logged in, add his data to meta.
          */
         if(auth()->check())
         {
-            $user = new Item(auth()->user(), new UserTransformer);
+            $user = new Item(auth()->user(), new $transformers['user']);
             $data = $this->fractal->createData($user)->toArray();
 
             $resource->setMetaValue('user', $data);

@@ -29,7 +29,7 @@ class CommentsServiceProvider extends ServiceProvider
             __DIR__.'/../Config/config.php' => config_path('comments.php'),
         ], 'config');
 
-        if (! $this->app->routesAreCached()) {
+        if (! $this->app->routesAreCached() && config('comments.enable_routing')) {
             require __DIR__.'/../Http/routes.php';
         }
     }
