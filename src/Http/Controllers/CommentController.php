@@ -153,8 +153,11 @@ class CommentController extends BaseController
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(Request $request, $transformers = null)
     {
+        $transformers['comment'] = $transformers['comment'] ?? CommentTransformer::class;
+        $transformers['user'] = $transformers['user'] ?? UserTransformer::class;
+
         $validator = $this->baseValidate($request->all(), [
             'comment' => 'required|string'
         ]);
@@ -178,10 +181,13 @@ class CommentController extends BaseController
 
         event(new CommentWasPosted($comment));
 
+        $transformedComment = new Item($comment, new $transformers['comment']($transformers['user']));
         // return $this->syndra->respondCreated();
         return $this->syndra
             ->respond([
-                $comment->toArray(),
+                // todo: add location header to the created comment?
+                'comment' => $this->fractal
+                    ->createData($transformedComment)->toArray(),
                 'message' => 'created'])
             ->setStatusCode(201);
     }
