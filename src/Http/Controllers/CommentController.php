@@ -178,7 +178,12 @@ class CommentController extends BaseController
 
         event(new CommentWasPosted($comment));
 
-        return $this->syndra->respondCreated();
+        // return $this->syndra->respondCreated();
+        return $this->syndra
+            ->respond([
+                $comment->toArray(),
+                'message' => 'created'])
+            ->setStatusCode(201);
     }
 
     /**
