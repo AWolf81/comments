@@ -241,9 +241,10 @@ class CommentController extends BaseController
             return $this->syndra->respondForbidden();
         }
 
-        $comment->delete();
-
+        // first emit event to avoid model not found error
         event(new CommentWasDeleted($comment));
+
+        $comment->delete();
 
         return $this->syndra->respondOk();
     }
