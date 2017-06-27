@@ -20,11 +20,13 @@ class CommentController extends BaseController
 {
     protected $fractal;
     protected $syndra;
+    protected $_commentModel;
 
-    public function __construct(Manager $fractal, Syndra $syndra)
+    public function __construct(Manager $fractal, Syndra $syndra, $commentModel = null)
     {
         $this->fractal = $fractal;
         $this->syndra = $syndra;
+        $this->_commentModel = $commentModel ?? Comment::class;
 
         if (config('comments.remove_data_property')){
             $this->fractal->setSerializer(new ArraySerializer());
@@ -173,7 +175,7 @@ class CommentController extends BaseController
             $request->get('content_id')
         );
 
-        $comment = new Comment;
+        $comment = new $this->_commentModel; //Comment;
         $comment->user()->associate(auth()->user());
         $comment->content()->associate($model);
         $comment->comment = $request->get('comment');
@@ -211,7 +213,7 @@ class CommentController extends BaseController
             );
         }
 
-        $comment = Comment::findOrFail($id);
+        $comment = $this->_commentModel::findOrFail($id);
 
         // If the user is not the comment owner.
         if(auth()->user()->id != $comment->user->id) {
@@ -234,7 +236,7 @@ class CommentController extends BaseController
      */
     public function destroy($id)
     {
-        $comment = Comment::findOrFail($id);
+        $comment = $this->_commentModel::findOrFail($id);
 
         // If the user is not the comment owner.
         if(auth()->user()->id != $comment->user->id) {
