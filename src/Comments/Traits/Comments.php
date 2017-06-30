@@ -6,6 +6,6 @@ trait Comments
 {
   public function comments()
   {
-    return $this->morphMany(Comment::class, 'content');
+    return $this->morphMany($this->comment_class?? Comment::class, 'content');
   }
 }
